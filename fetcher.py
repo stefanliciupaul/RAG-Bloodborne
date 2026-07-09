@@ -1,5 +1,4 @@
-"""Fethcer for the bloodborne wiki
-"""
+"""Fethcer for the bloodborne wiki"""
 
 import time
 import requests

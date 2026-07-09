@@ -1,5 +1,5 @@
 """
-Extracting content from the Bloodborne Wiki (bloodborne-wiki.com) """
+Extracting content from the Bloodborne Wiki (bloodborne-wiki.com)"""
 
 import json
 from pathlib import Path
@@ -44,20 +44,24 @@ def main():
 
         page_sections[title] = sections
         page_url[title] = url
-        print(f"Parsed '{title}': {len(sections)} sections kept "
-              f"({[h for h, _ in sections]})")
+        print(
+            f"Parsed '{title}': {len(sections)} sections kept "
+            f"({[h for h, _ in sections]})"
+        )
 
     # chunk and write to jsonl file
     all_records = []
     for title, sections in page_sections.items():
         for heading, text in sections:
             for chunk in chunk_section(text, config.MAX_CHUNK_CHARS):
-                all_records.append({
-                    "page_title": title,
-                    "section": heading,
-                    "url": page_url[title],
-                    "text": chunk,
-                })
+                all_records.append(
+                    {
+                        "page_title": title,
+                        "section": heading,
+                        "url": page_url[title],
+                        "text": chunk,
+                    }
+                )
 
     out_path = Path(config.OUTPUT_PATH)
     with out_path.open("w", encoding="utf-8") as f:

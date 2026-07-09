@@ -6,6 +6,7 @@ import re
 def _word_set(text: str) -> set[str]:
     return set(re.findall(r"[a-z0-9]+", text.lower()))
 
+
 def filter_sections_by_allowlist(
     sections: list[tuple[str, str]], allowlist: list[str]
 ) -> list[tuple[str, str]]:
@@ -16,7 +17,8 @@ def filter_sections_by_allowlist(
         return sections
     keywords = [k.lower() for k in allowlist]
     return [
-        (heading, text) for heading, text in sections
+        (heading, text)
+        for heading, text in sections
         if any(k in heading.lower() for k in keywords)
     ]
 

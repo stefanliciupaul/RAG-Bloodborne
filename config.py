@@ -62,7 +62,6 @@ OUTPUT_PATH = "wiki_chunks.jsonl"
 
 MAX_CHUNK_CHARS = 1500
 
-REQUEST_DELAY_SECONDS = 0.5  
+REQUEST_DELAY_SECONDS = 0.5
 
 USER_AGENT = "Mozilla/5.0 (compatible; BloodborneRAGBot/1.0; personal research project)"
-

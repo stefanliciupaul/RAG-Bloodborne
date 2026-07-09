@@ -1,5 +1,5 @@
 """
-Parser for the bloodborne-wiki.com 
+Parser for the bloodborne-wiki.com
 """
 
 from bs4 import BeautifulSoup, Tag, NavigableString, Comment
@@ -26,8 +26,7 @@ def _find_post_body(soup: BeautifulSoup) -> Tag:
         found = soup.find(tag_name, attrs=attrs)
         if found is not None:
             return found
-    raise ValueError(
-    )
+    raise ValueError()
 
 
 def _direct_rows(table: Tag) -> list[Tag]:
@@ -39,7 +38,6 @@ def _direct_cells(row: Tag) -> list[Tag]:
 
 
 class _SectionState:
-
     def __init__(self):
         self.sections: list[tuple[str, str]] = []
         self.current_heading = "Introduction"
@@ -77,7 +75,8 @@ def _process_table(table: Tag, state: "_SectionState") -> None:
             _walk(cells[0], state)
         elif len(cells) > 1:
             line = " | ".join(
-                c.get_text(separator=" ", strip=True) for c in cells
+                c.get_text(separator=" ", strip=True)
+                for c in cells
                 if c.get_text(strip=True)
             )
             if line:
