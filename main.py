@@ -10,7 +10,6 @@ from parser import get_page_title, extract_sections
 from chunker import chunk_section, filter_sections_by_allowlist
 
 
-
 def build_page_list() -> list[str]:
     urls = list(config.PAGE_URLS)
     return urls
