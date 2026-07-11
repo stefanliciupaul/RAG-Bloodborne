@@ -47,6 +47,7 @@ PAGE_URLS = [
     "https://www.bloodborne-wiki.com/2015/06/loran-silverbeast.html",
 ]
 
+#these are the sections of the website that are scraped
 SECTION_ALLOWLIST = [
     "description",
     "preparation",
@@ -60,7 +61,7 @@ SECTION_ALLOWLIST = [
 
 OUTPUT_PATH = "wiki_chunks.jsonl"
 
-MAX_CHUNK_CHARS = 1500
+MAX_CHUNK_CHARS = 2000
 
 REQUEST_DELAY_SECONDS = 0.5
 
