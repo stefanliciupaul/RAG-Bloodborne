@@ -5,21 +5,14 @@ import json
 from pathlib import Path
 
 import config
-from fetcher import fetch_all, discover_links
-from iter4_files.parser import get_page_title, extract_sections
-from chunker import chunk_section, dedupe_sections, filter_sections_by_allowlist
-from boilerplate import strip_cross_page_boilerplate
+from fetcher import fetch_all
+from parser import get_page_title, extract_sections
+from chunker import chunk_section, filter_sections_by_allowlist
+
 
 
 def build_page_list() -> list[str]:
     urls = list(config.PAGE_URLS)
-    if config.INDEX_URL:
-        print(f"Discovering links from {config.INDEX_URL}...")
-        discovered = discover_links(config.INDEX_URL)
-        print(f"  found {len(discovered)} candidate links")
-        for url in discovered:
-            if url not in urls:
-                urls.append(url)
     return urls
 
 
@@ -39,7 +32,6 @@ def main():
             print(f"  [skip] {url}: {e}")
             continue
 
-        sections = dedupe_sections(sections)
         sections = filter_sections_by_allowlist(sections, config.SECTION_ALLOWLIST)
 
         page_sections[title] = sections
