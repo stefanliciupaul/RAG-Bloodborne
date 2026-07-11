@@ -1,6 +1,11 @@
 # Virtual environment
 .venv/
 
+# Python
+__pycache__/
 
 # VS Code
 .vscode/*
+
+#RAG
+chunks_index.npz

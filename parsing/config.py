@@ -47,7 +47,7 @@ PAGE_URLS = [
     "https://www.bloodborne-wiki.com/2015/06/loran-silverbeast.html",
 ]
 
-#these are the sections of the website that are scraped
+# these are the sections of the website that are scraped
 SECTION_ALLOWLIST = [
     "description",
     "preparation",
