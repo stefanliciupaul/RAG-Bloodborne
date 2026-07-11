@@ -7,7 +7,19 @@ from pathlib import Path
 import config
 from fetcher import fetch_all
 from parser import get_page_title, extract_sections
-from chunker import chunk_section, filter_sections_by_allowlist
+from chunker import chunk_section, filter_sections_by_allowlist, dedupe_sections
+from boilerplate import strip_cross_page_boilerplate
+from reformat import reformat_weak_points
+
+
+def _embedding_label(heading: str) -> str:
+    """
+    The label prepended to a chunk's text for embedding
+    purposes "Weak Points" becomes "Breakable body parts"
+    """
+    if "weak point" in heading.lower():
+        return "Breakable body parts and damage thresholds"
+    return heading
 
 
 def build_page_list() -> list[str]:
@@ -31,7 +43,17 @@ def main():
             print(f"  [skip] {url}: {e}")
             continue
 
+        sections = dedupe_sections(sections)
         sections = filter_sections_by_allowlist(sections, config.SECTION_ALLOWLIST)
+
+        # Reformats the Weak Points table into natural-language sentences
+        sections = [
+            (
+                heading,
+                reformat_weak_points(text) if "weak point" in heading.lower() else text,
+            )
+            for heading, text in sections
+        ]
 
         page_sections[title] = sections
         page_url[title] = url
@@ -40,10 +62,25 @@ def main():
             f"({[h for h, _ in sections]})"
         )
 
+    # Pass 2: strip paragraphs that repeat verbatim across many pages
+    before = sum(len(t) for secs in page_sections.values() for _, t in secs)
+    page_sections = strip_cross_page_boilerplate(
+        page_sections,
+        min_pages=config.BOILERPLATE_MIN_PAGES,
+        min_fraction=config.BOILERPLATE_MIN_FRACTION,
+        heading_categories=config.SECTION_ALLOWLIST,
+    )
+    after = sum(len(t) for secs in page_sections.values() for _, t in secs)
+    print(
+        f"\nBoilerplate stripping: {before} -> {after} chars "
+        f"({before - after} chars removed)"
+    )
+
     # chunk and write to jsonl file
     all_records = []
     for title, sections in page_sections.items():
         for heading, text in sections:
+            label = _embedding_label(heading)
             for chunk in chunk_section(text, config.MAX_CHUNK_CHARS):
                 all_records.append(
                     {
@@ -51,6 +88,7 @@ def main():
                         "section": heading,
                         "url": page_url[title],
                         "text": chunk,
+                        "embed_text": f"{label}: {chunk}",
                     }
                 )
 

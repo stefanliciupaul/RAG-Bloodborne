@@ -2,7 +2,7 @@
 
 import time
 import requests
-#from bs4 import BeautifulSoup
+
 
 from config import USER_AGENT, REQUEST_DELAY_SECONDS
 

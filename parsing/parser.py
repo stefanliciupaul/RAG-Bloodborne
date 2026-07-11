@@ -2,7 +2,7 @@
 Parser for the bloodborne-wiki.com
 """
 
-from bs4 import BeautifulSoup, Tag, NavigableString, Comment
+from bs4 import BeautifulSoup, Tag
 
 POST_BODY_SELECTORS = [
     ("div", {"class": "post-body"}),
@@ -10,8 +10,8 @@ POST_BODY_SELECTORS = [
     ("article", {}),
 ]
 
-HEADING_TAGS = {"h1", "h2", "h3", "h4", "h5", "h6"}
-SKIP_TAGS = {"script", "style"}
+CONTENT_TAGS = ["h3", "li", "i", "tr"]
+_UI_NOISE_MARKERS = ("click to expand", "click to collapse")
 
 
 def get_page_title(html: str) -> str:
@@ -29,82 +29,67 @@ def _find_post_body(soup: BeautifulSoup) -> Tag:
     raise ValueError()
 
 
-def _direct_rows(table: Tag) -> list[Tag]:
-    return [tr for tr in table.find_all("tr") if tr.find_parent("table") is table]
-
-
-def _direct_cells(row: Tag) -> list[Tag]:
-    return [c for c in row.find_all(["td", "th"]) if c.find_parent("tr") is row]
-
-
-class _SectionState:
-    def __init__(self):
-        self.sections: list[tuple[str, str]] = []
-        self.current_heading = "Introduction"
-        self.buffer: list[str] = []
-
-    def flush(self):
-        text = "\n\n".join(p for p in self.buffer if p.strip()).strip()
-        if text:
-            self.sections.append((self.current_heading, text))
-        self.buffer.clear()
-
-    def add_heading(self, heading: str):
-        if heading:
-            self.flush()
-            self.current_heading = heading
-
-    def add_text(self, text: str):
-        text = " ".join(text.split())  # collapse internal whitespace
-        if text:
-            self.buffer.append(text)
-
-
-def _row_contains_heading(row: Tag) -> bool:
-    return row.find(lambda t: isinstance(t, Tag) and t.name in HEADING_TAGS) is not None
-
-
-def _process_table(table: Tag, state: "_SectionState") -> None:
-    for row in _direct_rows(table):
-        if _row_contains_heading(row):
-            _walk(row, state)
-            continue
-
-        cells = _direct_cells(row)
-        if len(cells) == 1:
-            _walk(cells[0], state)
-        elif len(cells) > 1:
-            line = " | ".join(
-                c.get_text(separator=" ", strip=True)
-                for c in cells
-                if c.get_text(strip=True)
-            )
-            if line:
-                state.buffer.append(line)
-
-
-def _walk(node: Tag, state: "_SectionState") -> None:
-    for child in node.children:
-        if isinstance(child, Tag):
-            if child.name in HEADING_TAGS:
-                state.add_heading(child.get_text(strip=True))
-            elif child.name == "table":
-                _process_table(child, state)
-            elif child.name in SKIP_TAGS:
-                continue
-            else:
-                _walk(child, state)
-        elif isinstance(child, Comment):
-            continue
-        elif isinstance(child, NavigableString):
-            state.add_text(str(child))
+def _row_text(tr: Tag) -> str | None:
+    # Flatten a <tr>'s own direct cells into one pipe-delimited line.
+    cells = [
+        c.get_text(separator=" ", strip=True)
+        for c in tr.find_all(["td", "th"], recursive=False)
+    ]
+    cells = [c for c in cells if c]
+    if len(cells) > 1:
+        line = " | ".join(cells)
+        if any(marker in line.lower() for marker in _UI_NOISE_MARKERS):
+            return None
+        return line
+    return None
 
 
 def extract_sections(html: str) -> list[tuple[str, str]]:
     soup = BeautifulSoup(html, "html.parser")
     post_body = _find_post_body(soup)
 
-    state = _SectionState()
-    _walk(post_body, state)
-    state.flush()
-    return state.sections
+    elements = post_body.find_all(CONTENT_TAGS)
+
+    sections: list[tuple[str, str]] = []
+    current_heading: str | None = None
+    current_parts: list[str] = []
+
+    def flush():
+        if current_heading is not None:
+            text = "\n".join(p for p in current_parts if p.strip())
+            if text.strip():
+                sections.append((current_heading, text))
+
+    for el in elements:
+        if el.name == "h3":
+            heading_id = el.get("id")
+            if heading_id:
+                flush()
+                current_heading = heading_id.strip()
+                current_parts = []
+            continue
+
+        if current_heading is None:
+            continue  # nothing before the first real heading is kept
+
+        if el.name == "li":
+            if el.find_parent("li") is not None:
+                continue  # nested list item; its parent <li> already covers it
+            text = el.get_text(separator=" ", strip=True)
+            if text:
+                current_parts.append(text)
+
+        elif el.name == "i":
+            if el.find_parent("li") is not None:
+                continue  # already captured as part of its enclosing <li>
+            text = el.get_text(separator=" ", strip=True)
+            if text:
+                current_parts.append(text)
+
+        elif el.name == "tr":
+            line = _row_text(el)
+            if line:
+                current_parts.append(line)
+
+    flush()
+    return sections

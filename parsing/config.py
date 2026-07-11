@@ -56,10 +56,13 @@ SECTION_ALLOWLIST = [
     "attack pattern",
     "weak point",
     "environment",
-    "notes",
 ]
 
 OUTPUT_PATH = "wiki_chunks.jsonl"
+
+# nr of pages the paragraph must appear under for it to be removed from the chunks
+BOILERPLATE_MIN_PAGES = 3
+BOILERPLATE_MIN_FRACTION = 0.5
 
 MAX_CHUNK_CHARS = 2000
 
