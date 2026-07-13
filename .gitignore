@@ -9,3 +9,4 @@ __pycache__/
 
 #RAG
 chunks_index.npz
+wiki_chunks.jsonl 

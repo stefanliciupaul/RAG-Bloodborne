@@ -55,7 +55,6 @@ SECTION_ALLOWLIST = [
     "strategy",
     "attack pattern",
     "weak point",
-    "environment",
 ]
 
 OUTPUT_PATH = "wiki_chunks.jsonl"
